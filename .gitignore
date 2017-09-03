@@ -51,4 +51,10 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
+# editor files
 *~
+
+# eclipse files
+.cproject
+.project
+.settings/

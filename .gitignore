@@ -58,3 +58,6 @@ dkms.conf
 .cproject
 .project
 .settings/
+
+# binary
+src/node

@@ -1,5 +1,6 @@
 #include <stdio.h>
 
-void main(void){
+int main(void){
   printf("that's the shit");
+  return 0;
 }

@@ -1,18 +1,5 @@
-/*
- * File: node.c
- *
- * Date:        2017-08-27
- *
- *
- */
-
 #include "udpnode.h"
 #include "receiver.h"
-#include <stdio.h>
-#include <stdlib.h>
-
-#include <string.h>
-#include <unistd.h>
 
 int main(int argc, char **argv) {
 
@@ -25,9 +12,7 @@ int main(int argc, char **argv) {
         printWrongParams(argv[0]);
         return EXIT_FAILURE;
     }
-    for(int i = 1; i < argc; i++){
-        printf("\n%s",argv[i]);
-    }
+
     if(strcmp(argv[4], "0") == 0){
         isElected = 0;
     }else{
@@ -44,11 +29,11 @@ int main(int argc, char **argv) {
     next->port = getPortMemString(argv[3]);
 
     /* Create receiver communication thread */
-    pthread_t sendThread;
-    pthread_t listenerThread;
+    pthread_t sendThread = NULL;
+    pthread_t listenerThread = NULL;
     if(isElected){
 
-        if (pthread_create(&sendThread, NULL, &sendUdp, (void*)this) < 0) {
+        if (pthread_create(&sendThread, NULL, &sendUdp, (void*)next) < 0) {
             perror("Error creating listener-thread");
             return EXIT_FAILURE;
         }
@@ -67,6 +52,10 @@ int main(int argc, char **argv) {
     if(listenerThread){
         pthread_join(listenerThread, NULL);
     }
+    free(this->port);
+    free(this->name);
+    free(next->name);
+    free(next->port);
 
 
     fprintf(stderr, "Exit-message received, goodbye!\n");

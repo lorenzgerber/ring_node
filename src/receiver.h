@@ -1,10 +1,3 @@
-/*
- * File: receiver.h
- *
- * Date:        2017-08-27
- *
- */
-
 #ifndef _POSIX_SOURCE
 #define _POSIX_SOURCE
 #endif
@@ -28,8 +21,6 @@
 #include "udpnode.h"
 
 #define BUF_SIZE 500
-#define NI_MAXHOST 1025
-#define NI_MAXSERV 32
 
 
 #ifndef __RECEIVER
@@ -49,28 +40,16 @@ struct message {
 };
 
 /* Sets up a socket for receiving messages for the program
- * @param server   host struct of this node
+ * @param server, host struct with the nodes information
  * @returned    void pointer (needed to end the thread)
  */
 void *listenUdp(void *server);
 
 /* Sets up a socket for receiving messages for the program
- * @param server   host struct of receiving node
+ * @param sendTo, host struct with the receiving nodes information
  * @returned    void pointer (needed to end the thread)
  */
 void *sendUdp(void *sendTo);
 
-
-/* Will receive and print to the host, uses protocol UDP.
- * @param   ht      The host of the program
- * @param   sfd     The socket it will receive data to.
- */
-void receiver_listenUDP(host *ht, int sfd);
-
-/* Will receive and print messages to the host, uses protocol TCP.
- * @param   ht      The host of the program
- * @param   sfd     The socket it will receive data to.
- */
-void receiver_listenTCP(host *ht, int sfd);
 
 #endif

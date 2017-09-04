@@ -1,11 +1,3 @@
-/*
- * node.h
- *
- *  Created on: Sep 3, 2017
- *
- */
-
-
 #ifndef UDPNODE_H_
 #define UDPNODE_H_
 
@@ -20,6 +12,5 @@ char* getMemHostName(char* hostString);
 
 char* getPortMemString(char* port);
 
-#endif  /*UDPNODE_H_*/
-
+#endif
 

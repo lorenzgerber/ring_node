@@ -1,6 +1,9 @@
 # Makefile
 CC=gcc
-CFLAGS= -Wall -std=c99 -pedantic -g
+CFLAGS= -Wall -std=c99 -pedantic -g -pthread
 
-all: node
-	$(CC) $(CFLAGS) -o node node.c
+all: udpnode
+
+udpnode: udpnode.c
+	$(CC) $(CFLAGS) -o udpnode udpnode.c receiver.c
+	

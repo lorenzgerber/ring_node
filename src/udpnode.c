@@ -13,7 +13,6 @@
 
 #include <string.h>
 #include <unistd.h>
-#include <pthread.h>
 
 int main(int argc, char **argv) {
 
@@ -45,22 +44,29 @@ int main(int argc, char **argv) {
     next->port = getPortMemString(argv[3]);
 
     /* Create receiver communication thread */
+    pthread_t sendThread;
+    pthread_t listenerThread;
     if(isElected){
-        pthread_t sendThread;
+
         if (pthread_create(&sendThread, NULL, &sendUdp, (void*)this) < 0) {
             perror("Error creating listener-thread");
             return EXIT_FAILURE;
         }
-        pthread_join(sendThread, NULL);
+
     }else{
-        pthread_t listenerThread;
+
         if (pthread_create(&listenerThread, NULL, &listenUdp, (void*)this) < 0) {
             perror("Error creating listener-thread");
             return EXIT_FAILURE;
         }
+
+    }
+    if(sendThread){
+        pthread_join(sendThread, NULL);
+    }
+    if(listenerThread){
         pthread_join(listenerThread, NULL);
     }
-
 
 
     fprintf(stderr, "Exit-message received, goodbye!\n");

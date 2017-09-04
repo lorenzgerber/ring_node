@@ -32,6 +32,7 @@ void *listenUdp(void *server) {
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_port = htons((uint16_t)strtol(thisServer->port, &endPtr, 10));
+    //addr.sin_port = htons(thisServer->port);
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
     if (bind(sock, (struct sockaddr *)&addr, sizeof (addr)) != 0){
         oops("bind");
@@ -95,3 +96,4 @@ void *sendUdp(void* sendTo){
     /* free getaddrinfo struct */
     free(res);
 }
+

@@ -10,16 +10,7 @@
 #define UDPNODE_H_
 
 
-typedef struct host {
-    char *name;
-    char* port;
-}host;
 
-
-typedef struct message {
-    int IdHigh;
-    char* messege;
-}messege;
 
 void printWrongParams(char *progName);
 
@@ -30,4 +21,5 @@ char* getMemHostName(char* hostString);
 char* getPortMemString(char* port);
 
 #endif  /*UDPNODE_H_*/
+
 

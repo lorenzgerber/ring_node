@@ -35,7 +35,18 @@
 #ifndef __RECEIVER
 #define __RECEIVER
 
+typedef struct host {
+    char *name;
+    char* port;
+    struct messege* mess;
+}host;
 
+
+struct message {
+    char* type;
+    int IdHigh;
+    char* messege;
+};
 
 /* Sets up a socket for receiving messages for the program
  * @param server   host struct of this node

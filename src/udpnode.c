@@ -1,5 +1,5 @@
 /*
- * File: udpnode.c
+ * File: node.c
  *
  * Date:        2017-08-27
  *
@@ -20,16 +20,15 @@ int main(int argc, char **argv) {
     int isElected;
     host *this;
     host *next;
-    char* debugMessege;
-
-    debugMessege = "electedNode...sendning";
 
     if (argc != 5) {
         printWrongParams(argv[0]);
         return EXIT_FAILURE;
     }
-
-    if(argv[3] == "1"){
+    for(int i = 1; i < argc; i++){
+        printf("\n%s",argv[i]);
+    }
+    if(strcmp(argv[4], "0") == 0){
         isElected = 0;
     }else{
         isElected = 1;
@@ -37,12 +36,12 @@ int main(int argc, char **argv) {
 
 
     this = malloc(sizeof(host));
-    this->name = getCurrentHostName();
-    strcpy(this->port, argv[1]);
+    this->name = getMemHostName(NULL);
+    this->port = getPortMemString(argv[1]);
 
     next = malloc(sizeof(host));
-    next->name = argv[2];
-    strcpy(next->port, argv[3]);
+    next->name = getMemHostName(argv[2]);
+    next->port = getPortMemString(argv[3]);
 
     /* Create receiver communication thread */
     if(isElected){
@@ -95,17 +94,32 @@ int* getIntFromStr(char *givenStr) {
 }
 
 
-/* Will allocate a string and set the current hostname.
+/* Will allocate a string and set the hostname from the input string.
+ * NULL value inputstring returns the localhost
  * @return  current hostname.
  */
-char* getCurrentHostName() {
+char* getMemHostName(char* hostString) {
     char tmpHost[255];
     memset(tmpHost, 0, 255);
-    if (gethostname(tmpHost, 255) != 0) {
-        return 0;
+    if(hostString == NULL){
+        if (gethostname(tmpHost, 255) != 0) {
+            return 0;
+        }
+        char *localhost = calloc(strlen(tmpHost)+1, sizeof(char));
+        strcpy(localhost, tmpHost);
+        return localhost;
+    }else{
+        char *host = calloc(strlen(hostString)+1, sizeof(char));
+        strcpy(host, hostString);
+        return host;
     }
-    char *host = calloc(strlen(tmpHost)+1, sizeof(char));
-    strcpy(host, tmpHost);
-    return host;
+
+}
+
+char* getPortMemString(char* port){
+
+    char* portString = calloc(strlen(port)+1, sizeof(char));
+    strcpy(portString, port);
+    return portString;
 }
 

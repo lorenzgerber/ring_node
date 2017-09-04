@@ -25,7 +25,9 @@ void printWrongParams(char *progName);
 
 int* getIntFromStr(char *givenStr);
 
-char* getCurrentHostName();
+char* getMemHostName(char* hostString);
+
+char* getPortMemString(char* port);
 
 #endif  /*UDPNODE_H_*/
 

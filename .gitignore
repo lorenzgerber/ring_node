@@ -61,3 +61,8 @@ dkms.conf
 
 # binary
 src/node
+
+#clion
+.idea/
+CMakeLists.txt
+cmake-build-debug/

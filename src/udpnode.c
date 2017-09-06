@@ -1,61 +1,62 @@
 #include "udpnode.h"
-#include "receiver.h"
+
 
 int main(int argc, char **argv) {
 
-    int nodeId;
-    int isElected;
-    host *this;
-    host *next;
+    //char* nodeId;
+    char* idHigh;
+    int election;
+    nodeAddr *thisAddr;
+    nodeAddr *nextAddr;
+    ringNode* node;
 
-    if (argc != 5) {
+    if (argc != 4) {
         printWrongParams(argv[0]);
         return EXIT_FAILURE;
     }
+    node = malloc(sizeof(ringNode));
 
-    if(strcmp(argv[4], "0") == 0){
-        isElected = 0;
-    }else{
-        isElected = 1;
-    }
+    thisAddr = malloc(sizeof(nodeAddr));
+    thisAddr->name = getMemHostName(NULL);
+    thisAddr->port = getPortMemString(argv[1]);
 
+    nextAddr = malloc(sizeof(nodeAddr));
+    nextAddr->name = getMemHostName(argv[2]);
+    nextAddr->port = getPortMemString(argv[3]);
 
-    this = malloc(sizeof(host));
-    this->name = getMemHostName(NULL);
-    this->port = getPortMemString(argv[1]);
+    node->nodeId = createNodeId(thisAddr);
 
-    next = malloc(sizeof(host));
-    next->name = getMemHostName(argv[2]);
-    next->port = getPortMemString(argv[3]);
+    node->this = thisAddr;
+    node->next = nextAddr;
+    //printf("\n%s", nodeId);
 
+    //phase 1
+    election = 1;
+    idHigh = calloc(strlen(node->nodeId), sizeof(char));
+    strcpy(idHigh, node->nodeId);
     /* Create receiver communication thread */
-    pthread_t sendThread = NULL;
-    pthread_t listenerThread = NULL;
-    if(isElected){
 
-        if (pthread_create(&sendThread, NULL, &sendUdp, (void*)next) < 0) {
-            perror("Error creating listener-thread");
-            return EXIT_FAILURE;
-        }
-
-    }else{
-
-        if (pthread_create(&listenerThread, NULL, &listenUdp, (void*)this) < 0) {
-            perror("Error creating listener-thread");
-            return EXIT_FAILURE;
-        }
-
+    pthread_t listenerThread;
+    pthread_t sendThread;
+    if (pthread_create(&sendThread, NULL, &sendUdp, (void*)node) < 0) {
+        perror("Error creating listener-thread");
+        return EXIT_FAILURE;
     }
-    if(sendThread){
-        pthread_join(sendThread, NULL);
+
+    if (pthread_create(&listenerThread, NULL, &listenUdp, (void*)node) < 0) {
+        perror("Error creating listener-thread");
+        return EXIT_FAILURE;
     }
-    if(listenerThread){
-        pthread_join(listenerThread, NULL);
-    }
-    free(this->port);
-    free(this->name);
-    free(next->name);
-    free(next->port);
+
+
+    pthread_join(listenerThread, NULL);
+    pthread_join(sendThread, NULL);
+
+    free(thisAddr->port);
+    free(thisAddr->name);
+    free(nextAddr->name);
+    free(nextAddr->port);
+    free(node);
 
 
     fprintf(stderr, "Exit-message received, goodbye!\n");
@@ -68,7 +69,7 @@ void printWrongParams(char *progName) {
     fprintf(stderr, "%s\n%s %s\n",
             "Invalid parameters",
             progName,
-            "<LOCAL PORT> <NEXT HOST> <NEXT PORT> <ELECTED DEBUG FLAG>");
+            "<LOCAL PORT> <NEXT HOST> <NEXT PORT>");
 }
 
 
@@ -118,4 +119,14 @@ char* getPortMemString(char* port){
     strcpy(portString, port);
     return portString;
 }
+
+char* createNodeId(nodeAddr* this){
+    char* tmpId = calloc(strlen(this->name)+strlen(this->port), sizeof(char));
+    strcat(tmpId, this->name);
+    strcat(tmpId, ",");
+    strcat(tmpId, this->port);
+
+    return tmpId;
+}
+
 

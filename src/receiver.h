@@ -20,24 +20,24 @@
 #include <math.h>
 #include "udpnode.h"
 
-#define BUF_SIZE 500
+#define BUF_SIZE 100
 
 
 #ifndef __RECEIVER
 #define __RECEIVER
 
-typedef struct host {
+typedef struct nodeAddr {
     char *name;
     char* port;
-    struct messege* mess;
-}host;
+}nodeAddr;
 
-
-struct message {
-    char* type;
-    int IdHigh;
-    char* messege;
-};
+typedef struct ringNode{
+    nodeAddr* this;
+    nodeAddr* next;
+    char* nodeId;
+    char* highId;
+    int isParticipant;
+}ringNode;
 
 /* Sets up a socket for receiving messages for the program
  * @param server, host struct with the nodes information
@@ -50,6 +50,8 @@ void *listenUdp(void *server);
  * @returned    void pointer (needed to end the thread)
  */
 void *sendUdp(void *sendTo);
+
+void generateElectionMessage(ringNode* node, char* buf);
 
 
 #endif

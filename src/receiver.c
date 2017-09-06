@@ -1,5 +1,6 @@
 
 
+#include <bits/time.h>
 #include "receiver.h"
 #define error(s) {perror(s); exit(-1); }
 
@@ -11,7 +12,7 @@
  */
 void *listenUdp(void *server) {
 
-    struct host *thisServer = (struct host*)server;
+    struct ringNode *thisServer = (struct ringNode*)server;
 
     struct sockaddr_in addr, from;
     int sock;
@@ -25,7 +26,7 @@ void *listenUdp(void *server) {
 
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
-    addr.sin_port = htons((uint16_t)strtol(thisServer->port, &endPtr, 10));
+    addr.sin_port = htons((uint16_t)strtol(thisServer->this->port, &endPtr, 10));
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
     if (bind(sock, (struct sockaddr *)&addr, sizeof (addr)) != 0){
         error("bind");
@@ -33,10 +34,11 @@ void *listenUdp(void *server) {
 
 
     fromlen = sizeof(from);
+    memset(buf, 0, BUF_SIZE);
 
     recvfrom(sock, buf, BUF_SIZE, 0, (struct sockaddr *)&from, &fromlen);
     printf("%s", buf);
-
+    sendto(sock, "ACK\n", 4, 0, (struct sockaddr *)&from, fromlen);
 
 }
 
@@ -44,12 +46,14 @@ void *listenUdp(void *server) {
  * @param sendTo, host struct with the receiving nodes information
  * @returned    void pointer (needed to end the thread)
  */
-void *sendUdp(void* sendTo){
+void *sendUdp(void* server){
 
-    struct host *receiver = (struct host*)sendTo;
+    struct ringNode *thisServer = (struct ringNode*)server;
+
     struct sockaddr_in addr;
     int sock;
-    char buf[BUF_SIZE];
+    char recvbuf[BUF_SIZE];
+    char sendbuf[BUF_SIZE];
     struct addrinfo *res, hints;
 
     memset(&hints, 0, sizeof(struct addrinfo));
@@ -71,18 +75,45 @@ void *sendUdp(void* sendTo){
 
 
     /* Build the network address of server */
-    if(getaddrinfo(receiver->name, receiver->port, &hints, &res) < 0){
+    if(getaddrinfo(thisServer->next->name, thisServer->next->port, &hints, &res) < 0){
         error("getaddrinfo");
     }
 
     /* Create a message to the server */
-    sprintf(buf, "Some data\n");
-    /* Send it to the server */
-    sendto(sock, buf, strlen(buf), 0, res->ai_addr, res->ai_addrlen);
-    /* Receive the answer */
-    memset(buf, 0, BUF_SIZE);
+    generateElectionMessage(thisServer, sendbuf);
 
+    /* Send it to the server */
+
+
+    struct timeval read_timeout;
+    read_timeout.tv_sec = 0;
+    read_timeout.tv_usec = 10;
+    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &read_timeout, sizeof read_timeout);
+
+    while(1){
+
+        sendto(sock, sendbuf, strlen(sendbuf), 0, res->ai_addr, res->ai_addrlen);
+
+        /* Receive the answer */
+        memset(recvbuf, 0, BUF_SIZE);
+        recvfrom(sock, recvbuf, BUF_SIZE, 0, res->ai_addr, &res->ai_addrlen);
+        if(strlen(recvbuf) > 0){
+            //printf("\nfick svar %s", recvbuf);
+            break;
+        }
+    }
     /* free getaddrinfo struct */
     free(res);
 }
+
+void generateElectionMessage(ringNode* node, char* buf){
+
+    memset(buf, 0, BUF_SIZE);
+    strcpy(buf, "ELECTION\n");
+    strcat(buf, node->nodeId);
+    strcat(buf, "\n");
+
+}
+
+
 

@@ -1,5 +1,3 @@
-
-
 #include <bits/time.h>
 #include "receiver.h"
 #define error(s) {perror(s); exit(-1); }
@@ -18,6 +16,7 @@ void *listenUdp(void *server) {
     int sock;
     unsigned int fromlen;
     char buf[BUF_SIZE];
+    char msId[BUF_SIZE];
     char* endPtr;
 
     if ((sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1){
@@ -32,13 +31,32 @@ void *listenUdp(void *server) {
         error("bind");
     }
 
+    while(thisServer->isParticipant){
+        fromlen = sizeof(from);
+        memset(buf, 0, BUF_SIZE);
+        memset(msId, 0, BUF_SIZE);
 
-    fromlen = sizeof(from);
-    memset(buf, 0, BUF_SIZE);
+        recvfrom(sock, buf, BUF_SIZE, 0, (struct sockaddr *)&from, &fromlen);
+        printf("%s", buf);
+        sendto(sock, "ACK\n", 4, 0, (struct sockaddr *)&from, fromlen);
+        getIdFromMessage(buf, msId);
 
-    recvfrom(sock, buf, BUF_SIZE, 0, (struct sockaddr *)&from, &fromlen);
-    printf("%s", buf);
-    sendto(sock, "ACK\n", 4, 0, (struct sockaddr *)&from, fromlen);
+        //if new messege has higher id: forward the messege
+        if(strcmp(thisServer->highId, msId) < 0){
+            memset(thisServer->highId, 0, BUF_SIZE);
+            strcpy(thisServer->highId, msId);
+            sendUdp(thisServer);
+            //if new messege has lower id: discard the messege, become nonparticipant
+        }else if(strcmp(thisServer->highId, msId) > 0){
+            thisServer->isParticipant = 0;
+            //if it is the original messege: become master
+        }else{
+            thisServer->isMaster = 1;
+            thisServer->isParticipant = 0;
+        }
+    }
+
+    //compare = compareElectionMessage(thisServer->nodeId, buf);
 
 }
 
@@ -78,35 +96,40 @@ void *sendUdp(void* server){
     if(getaddrinfo(thisServer->next->name, thisServer->next->port, &hints, &res) < 0){
         error("getaddrinfo");
     }
-
+    thisServer->highId = calloc(strlen(thisServer->nodeId), sizeof(char));
+    strcpy(thisServer->highId, thisServer->nodeId);
     /* Create a message to the server */
-    generateElectionMessage(thisServer, sendbuf);
+    if(thisServer->isParticipant){
+        createElectionMessage(thisServer, sendbuf);
+
+        struct timeval read_timeout;
+        read_timeout.tv_sec = 0;
+        read_timeout.tv_usec = 10;
+        setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &read_timeout, sizeof read_timeout);
+
+        while(1){
+
+            sendto(sock, sendbuf, strlen(sendbuf), 0, res->ai_addr, res->ai_addrlen);
+
+            /* Receive the answer */
+            memset(recvbuf, 0, BUF_SIZE);
+            recvfrom(sock, recvbuf, BUF_SIZE, 0, res->ai_addr, &res->ai_addrlen);
+            if(strlen(recvbuf) > 0){
+                break;
+            }
+        }
+    }
+
 
     /* Send it to the server */
 
 
-    struct timeval read_timeout;
-    read_timeout.tv_sec = 0;
-    read_timeout.tv_usec = 10;
-    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &read_timeout, sizeof read_timeout);
 
-    while(1){
-
-        sendto(sock, sendbuf, strlen(sendbuf), 0, res->ai_addr, res->ai_addrlen);
-
-        /* Receive the answer */
-        memset(recvbuf, 0, BUF_SIZE);
-        recvfrom(sock, recvbuf, BUF_SIZE, 0, res->ai_addr, &res->ai_addrlen);
-        if(strlen(recvbuf) > 0){
-            //printf("\nfick svar %s", recvbuf);
-            break;
-        }
-    }
     /* free getaddrinfo struct */
     free(res);
 }
 
-void generateElectionMessage(ringNode* node, char* buf){
+void createElectionMessage(ringNode* node, char* buf){
 
     memset(buf, 0, BUF_SIZE);
     strcpy(buf, "ELECTION\n");
@@ -115,5 +138,19 @@ void generateElectionMessage(ringNode* node, char* buf){
 
 }
 
+void getIdFromMessage(const char* message, char* id){
+    int i = 0;
+    int j = 0;
+    while(message[i] != '\n'){
+        id[i] = message[i];
+        i++;
+    }
+    i++;
+    while(message[i] != '\n'){
+        id[j] = message[i];
+        i++;
+        j++;
+    }
+}
 
 

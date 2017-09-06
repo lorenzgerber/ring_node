@@ -1,3 +1,11 @@
+/*
+ * File: node.c
+ *
+ * Date:        2017-08-27
+ *
+ *
+ */
+
 #include "udpnode.h"
 
 
@@ -28,12 +36,14 @@ int main(int argc, char **argv) {
 
     node->this = thisAddr;
     node->next = nextAddr;
+    node->isParticipant = 1;
+    node->isMaster = 0;
     //printf("\n%s", nodeId);
 
     //phase 1
     election = 1;
-    idHigh = calloc(strlen(node->nodeId), sizeof(char));
-    strcpy(idHigh, node->nodeId);
+
+
     /* Create receiver communication thread */
 
     pthread_t listenerThread;
@@ -48,10 +58,12 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
-
-    pthread_join(listenerThread, NULL);
     pthread_join(sendThread, NULL);
+    pthread_join(listenerThread, NULL);
 
+    if(node->isMaster){
+        printf("this node is master");
+    }
     free(thisAddr->port);
     free(thisAddr->name);
     free(nextAddr->name);
@@ -59,7 +71,7 @@ int main(int argc, char **argv) {
     free(node);
 
 
-    fprintf(stderr, "Exit-message received, goodbye!\n");
+    //fprintf(stderr, "Exit-message received, goodbye!\n");
     return EXIT_SUCCESS;
 
 }

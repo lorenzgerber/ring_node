@@ -1,3 +1,10 @@
+/*
+ * File: receiver.h
+ *
+ * Date:        2017-08-27
+ *
+ */
+
 #ifndef _POSIX_SOURCE
 #define _POSIX_SOURCE
 #endif
@@ -37,6 +44,7 @@ typedef struct ringNode{
     char* nodeId;
     char* highId;
     int isParticipant;
+    int isMaster;
 }ringNode;
 
 /* Sets up a socket for receiving messages for the program
@@ -51,7 +59,8 @@ void *listenUdp(void *server);
  */
 void *sendUdp(void *sendTo);
 
-void generateElectionMessage(ringNode* node, char* buf);
+void createElectionMessage(ringNode* node, char* buf);
 
+void getIdFromMessage(const char* message, char* id);
 
 #endif

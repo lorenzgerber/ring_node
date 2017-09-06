@@ -53,6 +53,7 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
+
     if (pthread_create(&listenerThread, NULL, &listenUdp, (void*)node) < 0) {
         perror("Error creating listener-thread");
         return EXIT_FAILURE;

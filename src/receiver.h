@@ -29,7 +29,6 @@
 
 #define BUF_SIZE 100
 
-
 #ifndef __RECEIVER
 #define __RECEIVER
 

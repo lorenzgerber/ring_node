@@ -1,23 +1,27 @@
+
 #include <bits/time.h>
 #include "receiver.h"
 #define error(s) {perror(s); exit(-1); }
 
-
+pthread_mutex_t lock;
 
 /* Sets up a socket for receiving messages for the program
  * @param server, host struct with the nodes information
  * @returned    void pointer (needed to end the thread)
  */
 void *listenUdp(void *server) {
-
+    pthread_mutex_lock(&lock);
     struct ringNode *thisServer = (struct ringNode*)server;
 
     struct sockaddr_in addr, from;
     int sock;
     unsigned int fromlen;
-    char buf[BUF_SIZE];
-    char msId[BUF_SIZE];
+    char* buf;
+    char* msId;
     char* endPtr;
+
+    buf = calloc(BUF_SIZE, sizeof(char));
+    msId = calloc(BUF_SIZE, sizeof(char));
 
     if ((sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1){
         error("socket");
@@ -33,29 +37,39 @@ void *listenUdp(void *server) {
 
     while(thisServer->isParticipant){
         fromlen = sizeof(from);
-        memset(buf, 0, BUF_SIZE);
+
         memset(msId, 0, BUF_SIZE);
 
+        printf("\nNode %s is waiting for message", thisServer->nodeId);
         recvfrom(sock, buf, BUF_SIZE, 0, (struct sockaddr *)&from, &fromlen);
-        printf("%s", buf);
-        sendto(sock, "ACK\n", 4, 0, (struct sockaddr *)&from, fromlen);
+
         getIdFromMessage(buf, msId);
+        printf("\nNode %s recieved datagram from %s", thisServer->nodeId, msId);
+        sendto(sock, "ACK\n", 4, 0, (struct sockaddr *)&from, fromlen);
+
 
         //if new messege has higher id: forward the messege
         if(strcmp(thisServer->highId, msId) < 0){
+            printf("\nNode %s is forwarding a message with %s as id", thisServer->nodeId, msId);
             memset(thisServer->highId, 0, BUF_SIZE);
             strcpy(thisServer->highId, msId);
             sendUdp(thisServer);
-            //if new messege has lower id: discard the messege, become nonparticipant
+            //forward message
+
+            //if new message has lower id: discard the messege, become nonparticipant
         }else if(strcmp(thisServer->highId, msId) > 0){
+            printf("\nNode %s is shutting down", thisServer->nodeId);
             thisServer->isParticipant = 0;
+            break;
             //if it is the original messege: become master
-        }else{
+        }else if(strcmp(thisServer->highId, msId) == 0){
+            printf("\nNode %s is becoming master",thisServer->nodeId);
             thisServer->isMaster = 1;
             thisServer->isParticipant = 0;
+            break;
         }
     }
-
+    pthread_mutex_unlock(&lock);
     //compare = compareElectionMessage(thisServer->nodeId, buf);
 
 }
@@ -70,9 +84,12 @@ void *sendUdp(void* server){
 
     struct sockaddr_in addr;
     int sock;
-    char recvbuf[BUF_SIZE];
-    char sendbuf[BUF_SIZE];
+    char* recvbuf;
+    char* sendbuf;
     struct addrinfo *res, hints;
+
+    recvbuf = calloc(BUF_SIZE, sizeof(char));
+    sendbuf = calloc(BUF_SIZE, sizeof(char));
 
     memset(&hints, 0, sizeof(struct addrinfo));
     hints.ai_family = AF_UNSPEC;
@@ -115,14 +132,15 @@ void *sendUdp(void* server){
             memset(recvbuf, 0, BUF_SIZE);
             recvfrom(sock, recvbuf, BUF_SIZE, 0, res->ai_addr, &res->ai_addrlen);
             if(strlen(recvbuf) > 0){
+                printf("\nNode: %s send success", thisServer->nodeId);
                 break;
             }
         }
     }
 
-
+    free(sendbuf);
+    free(recvbuf);
     /* Send it to the server */
-
 
 
     /* free getaddrinfo struct */
